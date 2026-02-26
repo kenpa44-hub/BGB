@@ -23,6 +23,13 @@
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
+        .animate-pulse-soft {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .7; }
+        }
     </style>
 </head>
 <body class="bg-slate-50">
@@ -32,37 +39,55 @@
         const { useState, useEffect } = React;
 
         const App = () => {
-            const [jpyRate, setJpyRate] = useState(916.50);
-            const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleString());
+            const [jpyRate, setJpyRate] = useState(0);
+            const [lastUpdated, setLastUpdated] = useState('');
             const [jpyInput, setJpyInput] = useState('1000');
             const [krwInput, setKrwInput] = useState('');
-            const [isLoading, setIsLoading] = useState(false);
-            const [trend, setTrend] = useState('down');
+            const [isLoading, setIsLoading] = useState(true);
+            const [error, setError] = useState(null);
 
-            const historyData = [920, 918, 915, 917, 916, 914, 916.5];
-
+            // 실시간 환율 데이터 가져오기 (Open Exchange Rates API 무료 엔드포인트 활용)
             const fetchRate = async () => {
                 setIsLoading(true);
-                setTimeout(() => {
-                    const randomVariation = (Math.random() - 0.5) * 2;
-                    const newRate = 916.50 + randomVariation;
-                    setJpyRate(newRate);
-                    setLastUpdated(new Date().toLocaleString());
-                    setTrend(randomVariation > 0 ? 'up' : 'down');
-                    setIsLoading(false);
-                }, 800);
+                setError(null);
+                try {
+                    // 외부 API를 통해 실제 JPY/KRW 환율을 가져옵니다.
+                    const response = await fetch('https://open.er-api.com/v6/latest/JPY');
+                    const data = await response.json();
+                    
+                    if (data.result === "success") {
+                        const ratePerOneJpy = data.rates.KRW;
+                        const ratePerHundredJpy = ratePerOneJpy * 100;
+                        
+                        setJpyRate(ratePerHundredJpy);
+                        setLastUpdated(new Date().toLocaleString());
+                        
+                        // 초기 계산기 값 업데이트 (1000엔 기준)
+                        const initialKrw = (1000 * ratePerOneJpy).toLocaleString(undefined, { maximumFractionDigits: 0 });
+                        setKrwInput(initialKrw);
+                    } else {
+                        throw new Error("데이터를 가져올 수 없습니다.");
+                    }
+                } catch (err) {
+                    console.error("환율 로딩 에러:", err);
+                    setError("환율 정보를 불러오는 데 실패했습니다.");
+                    // 에러 시 기본값 설정
+                    if (jpyRate === 0) setJpyRate(915.50);
+                } finally {
+                    setTimeout(() => setIsLoading(false), 500);
+                }
             };
 
             useEffect(() => {
                 fetchRate();
-                updateKrwFromJpy('1000', 916.50);
             }, []);
 
-            const updateKrwFromJpy = (val, rate = jpyRate) => {
+            const updateKrwFromJpy = (val) => {
                 setJpyInput(val);
                 const num = parseFloat(val.replace(/,/g, ''));
-                if (!isNaN(num)) {
-                    setKrwInput(((num / 100) * rate).toLocaleString(undefined, { maximumFractionDigits: 0 }));
+                if (!isNaN(num) && jpyRate > 0) {
+                    const calculated = (num * (jpyRate / 100));
+                    setKrwInput(calculated.toLocaleString(undefined, { maximumFractionDigits: 0 }));
                 } else {
                     setKrwInput('');
                 }
@@ -71,8 +96,9 @@
             const updateJpyFromKrw = (val) => {
                 setKrwInput(val);
                 const num = parseFloat(val.replace(/,/g, ''));
-                if (!isNaN(num)) {
-                    setJpyInput(((num / jpyRate) * 100).toLocaleString(undefined, { maximumFractionDigits: 0 }));
+                if (!isNaN(num) && jpyRate > 0) {
+                    const calculated = (num / (jpyRate / 100));
+                    setJpyInput(calculated.toLocaleString(undefined, { maximumFractionDigits: 0 }));
                 } else {
                     setJpyInput('');
                 }
@@ -85,10 +111,11 @@
                         <div className="bg-indigo-600 p-8 pb-10 text-white relative">
                             <div className="flex justify-between items-center mb-6">
                                 <h1 className="text-xl font-bold flex items-center gap-2">
-                                    <i data-lucide="japanese-yen"></i> 엔화 환율 체크
+                                    <i data-lucide="japanese-yen"></i> 실시간 엔화 환율
                                 </h1>
                                 <button 
                                     onClick={fetchRate}
+                                    disabled={isLoading}
                                     className={`p-2 rounded-full bg-white/20 active:scale-95 transition-all ${isLoading ? 'animate-spin' : ''}`}
                                 >
                                     <i data-lucide="refresh-cw" size="20"></i>
@@ -97,39 +124,24 @@
                             
                             <div className="mb-2">
                                 <span className="text-indigo-100 text-sm">현재 100엔당</span>
-                                <div className="text-5xl font-black flex items-end gap-2 mt-1">
-                                    {jpyRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    <span className="text-xl font-normal mb-2 text-indigo-200">원</span>
-                                </div>
+                                {isLoading && jpyRate === 0 ? (
+                                    <div className="h-12 w-32 bg-white/20 animate-pulse rounded-lg mt-1"></div>
+                                ) : (
+                                    <div className="text-5xl font-black flex items-end gap-2 mt-1">
+                                        {jpyRate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        <span className="text-xl font-normal mb-2 text-indigo-200">원</span>
+                                    </div>
+                                )}
                             </div>
                             
                             <div className="flex items-center gap-2 text-[10px] text-indigo-200 mt-4 opacity-80">
                                 <i data-lucide="info" size="12"></i>
-                                <span>실시간 데이터 업데이트 중</span>
+                                <span>{error ? error : "실시간 매매기준율 데이터가 적용됨"}</span>
                             </div>
                         </div>
 
                         {/* Content */}
                         <div className="p-8 space-y-8 -mt-6 bg-white rounded-t-[2.5rem] relative">
-                            {/* Trend Chart */}
-                            <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100">
-                                <div className="flex justify-between items-center mb-4">
-                                    <span className="text-sm font-bold text-slate-500">최근 7일 추이</span>
-                                    <span className={`text-xs font-bold px-3 py-1 rounded-full ${trend === 'up' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                                        {trend === 'up' ? '상승세' : '하락세'}
-                                    </span>
-                                </div>
-                                <div className="h-16 flex items-end justify-between gap-2 px-1">
-                                    {historyData.map((val, i) => (
-                                        <div 
-                                            key={i} 
-                                            className={`w-full rounded-t-lg transition-all duration-700 ${i === historyData.length - 1 ? 'bg-indigo-500' : 'bg-slate-200'}`}
-                                            style={{ height: `${((val - 900) / 30) * 100}%`, minHeight: '15%' }}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
                             {/* Calculator */}
                             <div className="space-y-4">
                                 <div className="space-y-2">
@@ -184,9 +196,12 @@
                         </div>
 
                         {/* Footer info */}
-                        <div className="px-8 pb-8 text-center">
+                        <div className="px-8 pb-8 text-center border-t border-slate-50 pt-6 mt-4">
+                            <p className="text-[10px] text-slate-400 font-medium tracking-tight mb-1">
+                                데이터 제공: ExchangeRate-API
+                            </p>
                             <p className="text-[10px] text-slate-400 font-medium tracking-tight">
-                                마지막 업데이트: {lastUpdated}
+                                마지막 갱신: {lastUpdated}
                             </p>
                         </div>
                     </div>
@@ -197,9 +212,16 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
 
-        setTimeout(() => {
-            lucide.createIcons();
-        }, 500);
+        // 아이콘 초기화 함수
+        const initIcons = () => {
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        };
+
+        // 데이터 로딩 시점마다 아이콘 다시 그리기
+        setTimeout(initIcons, 500);
+        setInterval(initIcons, 2000);
     </script>
 </body>
 </html>
