@@ -117,6 +117,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 /* settings */
 .settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .setting{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.setting.wide{grid-column:1/-1}
 .setting label,.setting .lbl{font-size:12px;color:var(--muted)}
 .seg{display:flex;gap:4px;flex-wrap:wrap}
 .seg button{
@@ -185,7 +186,7 @@ input[type=range]{width:100%;accent-color:var(--amber)}
 
   <section class="settings">
     <div class="setting">
-      <span class="lbl">소리 후 셔터까지</span>
+      <span class="lbl">소리 시작 후 셔터까지</span>
       <div class="seg" id="delaySeg">
         <button type="button" data-v="300">0.3초</button>
         <button type="button" data-v="600">0.6초</button>
@@ -201,10 +202,18 @@ input[type=range]{width:100%;accent-color:var(--amber)}
       </div>
     </div>
     <div class="setting">
-      <label for="vol">소리 크기</label>
-      <input type="range" id="vol" min="0" max="100" value="80">
+      <span class="lbl">소리 길이</span>
+      <div class="seg" id="repeatSeg">
+        <button type="button" data-v="1">짧게</button>
+        <button type="button" data-v="2">보통</button>
+        <button type="button" data-v="3">길게</button>
+      </div>
     </div>
     <div class="setting">
+      <label for="vol">소리 크기</label>
+      <input type="range" id="vol" min="0" max="100" value="90">
+    </div>
+    <div class="setting wide">
       <span class="lbl">셔터음</span>
       <label class="toggle" for="shutterSnd"><span>찰칵 소리 내기</span><input type="checkbox" id="shutterSnd"></label>
     </div>
@@ -247,13 +256,20 @@ input[type=range]{width:100%;accent-color:var(--amber)}
 
   /* ---------- audio: every sound is synthesized, no files ---------- */
   let ctx = null, master = null, noiseBuf = null;
+  const volGain = () => ($("vol").value / 100) * 2;
+  const REPEAT_GAP = .25;
   function audio() {
     if (!ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
       ctx = new AC();
       master = ctx.createGain();
-      master.gain.value = $("vol").value / 100;
-      master.connect(ctx.destination);
+      master.gain.value = volGain();
+      // compressor + makeup gain: much louder overall without crackling
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -18; comp.knee.value = 6; comp.ratio.value = 8;
+      comp.attack.value = .003; comp.release.value = .15;
+      const makeup = ctx.createGain(); makeup.gain.value = 3.5;
+      master.connect(comp); comp.connect(makeup); makeup.connect(ctx.destination);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0);
       for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -298,9 +314,9 @@ input[type=range]{width:100%;accent-color:var(--amber)}
         });
         tone(t + .86, .08, { from: 260, to: 120, gain: .35 });
       } },
-    { id: "crinkle", name: "비닐 바스락", hint: "사냥 본능", dur: .8, play(t) {
-        for (let i = 0; i < 34; i++) {
-          noise(t + rnd(0, .72), rnd(.008, .035), { freq: rnd(2200, 8000), q: rnd(.8, 3), gain: rnd(.2, .9) });
+    { id: "crinkle", name: "비닐 바스락", hint: "사냥 본능", dur: 1.2, play(t) {
+        for (let i = 0; i < 52; i++) {
+          noise(t + rnd(0, 1.1), rnd(.008, .035), { freq: rnd(2200, 8000), q: rnd(.8, 3), gain: rnd(.2, .9) });
         }
       } },
     { id: "bird", name: "새 짹짹", hint: "창밖 새소리", dur: 1.0, play(t) {
@@ -310,23 +326,23 @@ input[type=range]{width:100%;accent-color:var(--amber)}
           tone(t + s, .085, { curve: new Float32Array([base, base * 1.7, base * 1.2, base * 1.55]), gain: .28 });
         });
       } },
-    { id: "mouse", name: "쥐 찍찍", hint: "높은 소리", dur: .7, play(t) {
-        [0, .18, .4].forEach((s) => {
+    { id: "mouse", name: "쥐 찍찍", hint: "높은 소리", dur: .85, play(t) {
+        [0, .18, .4, .62].forEach((s) => {
           const { o } = tone(t + s, .1, { from: rnd(5200, 5800), to: rnd(6800, 7600), gain: .22 });
           const lfo = ctx.createOscillator(); lfo.frequency.value = 38;
           const lg = ctx.createGain(); lg.gain.value = 450;
           lfo.connect(lg); lg.connect(o.frequency); lfo.start(t + s); lfo.stop(t + s + .12);
         });
       } },
-    { id: "bell", name: "방울 딸랑", hint: "장난감 방울", dur: 1.1, play(t) {
+    { id: "bell", name: "방울 딸랑", hint: "장난감 방울", dur: 1.45, play(t) {
         const partials = [[1, .35], [2.76, .18], [5.4, .1], [8.93, .05]];
-        [0, .16, .3, .52].forEach((s) => {
+        [0, .16, .3, .52, .7, .92].forEach((s) => {
           const base = rnd(1900, 2300);
           partials.forEach(([m, g]) => tone(t + s, .45, { from: base * m, to: base * m * .995, gain: g, attack: .002 }));
         });
       } },
-    { id: "meow", name: "야옹", hint: "다른 고양이?", dur: .85, play(t) {
-        const dur = .8;
+    { id: "meow", name: "야옹", hint: "다른 고양이?", dur: 1.15, play(t) {
+        const dur = 1.1;
         const o = ctx.createOscillator(); o.type = "sawtooth";
         o.frequency.setValueCurveAtTime(new Float32Array([430, 620, 760, 720, 560, 440]), t, dur);
         const vib = ctx.createOscillator(); vib.frequency.value = 6;
@@ -346,8 +362,8 @@ input[type=range]{width:100%;accent-color:var(--amber)}
         o.connect(env); mix.connect(master);
         o.start(t); vib.start(t); o.stop(t + dur + .05); vib.stop(t + dur + .05);
       } },
-    { id: "kiss", name: "쪽쪽", hint: "집사 부르는 소리", dur: .65, play(t) {
-        [0, .15, .3, .45].forEach((s) => {
+    { id: "kiss", name: "쪽쪽", hint: "집사 부르는 소리", dur: .95, play(t) {
+        [0, .15, .3, .45, .62, .78].forEach((s) => {
           noise(t + s, .04, { freq: rnd(3800, 4600), q: 9, gain: .9, attack: .001 });
           tone(t + s, .05, { from: 3400, to: 1700, gain: .12, attack: .001 });
         });
@@ -365,9 +381,11 @@ input[type=range]{width:100%;accent-color:var(--amber)}
   }
   function playSound(snd) {
     audio();
-    snd.play(ctx.currentTime + .02);
+    const t0 = ctx.currentTime + .02;
+    for (let k = 0; k < state.repeat; k++) snd.play(t0 + k * (snd.dur + REPEAT_GAP));
+    const total = snd.dur * state.repeat + REPEAT_GAP * (state.repeat - 1);
     const chip = document.querySelector(`.chip[data-id="${snd.id}"]`) || document.querySelector('.chip[data-id="random"]');
-    if (chip) { chip.classList.add("playing"); setTimeout(() => chip.classList.remove("playing"), snd.dur * 1000); }
+    if (chip) { chip.classList.add("playing"); setTimeout(() => chip.classList.remove("playing"), total * 1000); }
   }
   function shutterClick() {
     if (!$("shutterSnd").checked) return;
@@ -381,6 +399,7 @@ input[type=range]{width:100%;accent-color:var(--amber)}
     sound: store.get("sound", "churu"),
     delay: store.get("delay", 600),
     burst: store.get("burst", 3),
+    repeat: store.get("repeat", 2),
     hits: store.get("hits", {})
   };
   function seg(el, key) {
@@ -393,7 +412,8 @@ input[type=range]{width:100%;accent-color:var(--amber)}
   }
   seg($("delaySeg"), "delay");
   seg($("burstSeg"), "burst");
-  $("vol").addEventListener("input", () => { if (master) master.gain.value = $("vol").value / 100; });
+  seg($("repeatSeg"), "repeat");
+  $("vol").addEventListener("input", () => { if (master) master.gain.value = volGain(); });
   $("shutterSnd").checked = store.get("shutterSnd", false);
   $("shutterSnd").addEventListener("change", () => store.set("shutterSnd", $("shutterSnd").checked));
 
