@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ko">
-<head>https://github.com/kenpa44-hub/BGB/edit/main/halkka-malkka/index.html
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e9eef3">
@@ -17,7 +17,8 @@
   --ink: #1d2a3a;
   --muted: #5f6f82;
   --line: #c9d3de;
-  --skin: #ffd9b8;
+  --skin: #f7c27e;
+  --stripe: #d98a3a;
   --do: #1f7a5a;
   --dont: #c8323c;
   --hl: #ffe27a;
@@ -27,12 +28,12 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #141b24; --paper: #1d2733; --ink: #e8eef5; --muted: #9aabbd; --line: #33414f;
-    --skin: #f2c9a4; --do: #4cc596; --dont: #ff6b73; --hl: #b8962a; color-scheme: dark;
+    --skin: #e9b46f; --stripe: #b8702c; --do: #4cc596; --dont: #ff6b73; --hl: #b8962a; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #141b24; --paper: #1d2733; --ink: #e8eef5; --muted: #9aabbd; --line: #33414f;
-  --skin: #f2c9a4; --do: #4cc596; --dont: #ff6b73; --hl: #b8962a; color-scheme: dark;
+  --skin: #e9b46f; --stripe: #b8702c; --do: #4cc596; --dont: #ff6b73; --hl: #b8962a; color-scheme: dark;
 }
 html, body { min-height: 100%; }
 body {
@@ -144,7 +145,7 @@ li .r.dont { color: var(--dont); }
 <div class="wrap">
   <header>
     <h1><span class="q">할까?</span> <span class="q2">말까?</span></h1>
-    <p class="sub">고민될 땐 그림을 눌러요. 반반 확률로 대신 정해 줄게요.</p>
+    <p class="sub">고민될 땐 눌러요. 대신 정해줄게요!</p>
   </header>
 
   <div class="topic">
@@ -170,9 +171,14 @@ li .r.dont { color: var(--dont); }
       <!-- body -->
       <path d="M150 448 C150 370 200 342 260 342 C320 342 370 370 370 448 Z" fill="var(--muted)" opacity=".55"/>
       <g class="head">
+        <!-- cat ears -->
+        <path d="M188 222 L194 150 L244 190 Z" fill="var(--skin)" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M332 222 L326 150 L276 190 Z" fill="var(--skin)" stroke="var(--ink)" stroke-width="4" stroke-linejoin="round"/>
+        <path d="M200 196 L203 166 L226 186 Z" fill="#f4a3a8"/>
+        <path d="M320 196 L317 166 L294 186 Z" fill="#f4a3a8"/>
         <circle cx="260" cy="262" r="84" fill="var(--skin)" stroke="var(--ink)" stroke-width="4"/>
-        <!-- hair tuft -->
-        <path d="M232 182 q10 -26 28 -4 q12 -22 26 2" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+        <!-- tabby stripes -->
+        <path d="M260 182 v18 M244 186 l4 14 M276 186 l-4 14" stroke="var(--stripe)" stroke-width="5" stroke-linecap="round"/>
         <!-- brows: worried -->
         <path d="M212 232 l26 8" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
         <path d="M308 232 l-26 8" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
@@ -181,13 +187,17 @@ li .r.dont { color: var(--dont); }
         <circle cx="292" cy="258" r="9" fill="var(--ink)"/>
         <circle cx="231" cy="254" r="3" fill="var(--paper)"/>
         <circle cx="295" cy="254" r="3" fill="var(--paper)"/>
-        <!-- wavy mouth -->
-        <path d="M236 302 q8 -8 16 0 q8 8 16 0 q8 -8 16 0" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+        <!-- nose + worried cat mouth -->
+        <path d="M252 282 h16 l-8 9 Z" fill="#f08a93" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M260 291 v6 M244 306 q8 -10 16 -9 q8 -1 16 9" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+        <!-- whiskers -->
+        <path d="M222 288 l-40 -6 M222 298 l-40 6 M298 288 l40 -6 M298 298 l40 6" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
         <!-- sweat -->
         <path class="sweat" d="M334 222 q10 16 0 22 q-10 -6 0 -22 Z" fill="#7cc3f0" stroke="var(--ink)" stroke-width="2"/>
       </g>
-      <!-- hand on chin -->
+      <!-- paw on chin -->
       <ellipse cx="298" cy="350" rx="26" ry="20" fill="var(--skin)" stroke="var(--ink)" stroke-width="4"/>
+      <path d="M289 340 v10 M307 340 v10" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
     </svg>
     <span class="hint" id="hint">눌러서 결정하기</span>
     <span class="stamp" id="stamp" hidden></span>
