@@ -84,9 +84,15 @@ h1 .q2 { color: var(--dont); }
 @keyframes drip { 0%,40% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(26px); opacity: 0; } }
 
 .hint {
-  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
-  font-size: .9rem; color: var(--muted); background: var(--bg); padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+  position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+  font-family: var(--display); font-size: clamp(1.25rem, 5.5vw, 1.6rem); letter-spacing: .02em;
+  color: #fff; background: #e0262f; padding: 12px 30px; border-radius: 999px; white-space: nowrap;
+  box-shadow: 0 5px 0 #9e1219, 0 10px 22px -8px rgba(160, 20, 30, .6);
+  animation: nudge 1.8s ease-in-out infinite;
 }
+.stage:hover .hint { background: #c81c25; }
+.stage.busy .hint { animation: none; }
+@keyframes nudge { 0%, 100% { transform: translateX(-50%) scale(1); } 50% { transform: translateX(-50%) scale(1.06); } }
 
 .stamp {
   position: absolute; left: 50%; top: 50%;
@@ -134,7 +140,7 @@ li .r.dont { color: var(--dont); }
 .clear { align-self: flex-end; font: inherit; font-size: .85rem; color: var(--muted); background: none; border: 0; cursor: pointer; text-decoration: underline; padding: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
-  .head, .sweat { animation: none !important; }
+  .head, .sweat, .hint { animation: none !important; }
   .stamp.slam { animation: none; }
   .stage { transition: none; }
 }
