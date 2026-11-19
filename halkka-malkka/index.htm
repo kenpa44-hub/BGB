@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#e9eef3">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>할까 말까</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: one centered card-less stage — a worried character, two thought bubbles, a stamp that lands on the verdict */
+:root {
+  --bg: #e9eef3;
+  --paper: #f8fafc;
+  --ink: #1d2a3a;
+  --muted: #5f6f82;
+  --line: #c9d3de;
+  --skin: #ffd9b8;
+  --do: #1f7a5a;
+  --dont: #c8323c;
+  --hl: #ffe27a;
+  --display: "Black Han Sans", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141b24; --paper: #1d2733; --ink: #e8eef5; --muted: #9aabbd; --line: #33414f;
+    --skin: #f2c9a4; --do: #4cc596; --dont: #ff6b73; --hl: #b8962a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141b24; --paper: #1d2733; --ink: #e8eef5; --muted: #9aabbd; --line: #33414f;
+  --skin: #f2c9a4; --do: #4cc596; --dont: #ff6b73; --hl: #b8962a; color-scheme: dark;
+}
+html, body { min-height: 100%; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 40px;
+}
+.wrap { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; align-items: stretch; }
+header { text-align: center; display: flex; flex-direction: column; gap: 6px; }
+h1 { font-family: var(--display); font-weight: 400; font-size: 2.4rem; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+h1 .q { color: var(--do); }
+h1 .q2 { color: var(--dont); }
+.sub { margin: 0; color: var(--muted); }
+
+.topic { display: flex; flex-direction: column; gap: 6px; }
+.topic label { font-size: .85rem; color: var(--muted); letter-spacing: .04em; }
+.topic input {
+  font: inherit; font-size: 1.05rem; padding: 12px 14px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: var(--paper); color: var(--ink); width: 100%; box-sizing: border-box;
+}
+.topic input:focus-visible { outline: 3px solid var(--hl); outline-offset: 1px; border-color: var(--ink); }
+
+.stage {
+  position: relative; border: 0; padding: 0; margin: 0; cursor: pointer; width: 100%;
+  background: var(--paper); border-radius: 24px; aspect-ratio: 1 / 0.86; max-width: 100%;
+  box-shadow: 0 1px 0 var(--line), 0 14px 30px -18px rgba(20, 40, 60, .45);
+  color: var(--ink); font: inherit; overflow: hidden;
+  transition: transform .15s ease;
+}
+.stage:hover { transform: translateY(-2px); }
+.stage:active { transform: translateY(1px) scale(.995); }
+.stage:focus-visible { outline: 3px solid var(--hl); outline-offset: 4px; }
+.stage[aria-disabled="true"] { cursor: progress; }
+.stage svg { width: 100%; height: 100%; display: block; }
+
+.bubble rect { fill: var(--bg); stroke: var(--ink); stroke-width: 3; transition: fill .08s; }
+.bubble circle { fill: var(--bg); stroke: var(--ink); stroke-width: 3; transition: fill .08s; }
+.bubble text { font-family: var(--display); font-size: 40px; fill: var(--ink); }
+.bubble.on rect, .bubble.on circle { fill: var(--hl); }
+.bubble.dim { opacity: .28; transition: opacity .3s; }
+
+.head { transform-origin: 260px 300px; animation: ponder 2.6s ease-in-out infinite; }
+.stage.busy .head { animation-duration: .5s; }
+.stage.done .head { animation: none; }
+@keyframes ponder { 0%,100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+.sweat { animation: drip 2.6s ease-in infinite; }
+@keyframes drip { 0%,40% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(26px); opacity: 0; } }
+
+.hint {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  font-size: .9rem; color: var(--muted); background: var(--bg); padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+}
+
+.stamp {
+  position: absolute; left: 50%; top: 50%;
+  font-family: var(--display); font-size: clamp(3.4rem, 17vw, 5.6rem); line-height: 1; white-space: nowrap;
+  padding: 14px 26px 10px; border: 7px solid currentColor; border-radius: 18px;
+  background: color-mix(in srgb, var(--paper) 82%, transparent);
+  transform: translate(-50%, -50%) rotate(-12deg) scale(1); pointer-events: none;
+}
+.stamp.do { color: var(--do); }
+.stamp.dont { color: var(--dont); }
+.stamp.slam { animation: slam .42s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes slam {
+  0% { transform: translate(-50%, -50%) rotate(-24deg) scale(2.6); opacity: 0; }
+  100% { transform: translate(-50%, -50%) rotate(-12deg) scale(1); opacity: 1; }
+}
+
+.verdict { text-align: center; min-height: 3.2em; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+.verdict .line { font-size: 1.15rem; margin: 0; text-wrap: balance; }
+.verdict .line b { font-family: var(--display); font-weight: 400; }
+.verdict .small { margin: 0; color: var(--muted); font-size: .9rem; }
+
+.again {
+  align-self: center; font: inherit; font-size: 1rem; padding: 12px 22px; border-radius: 999px;
+  border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer;
+}
+.again:hover { background: var(--ink); color: var(--paper); }
+.again:focus-visible { outline: 3px solid var(--hl); outline-offset: 2px; }
+
+.log { display: flex; flex-direction: column; gap: 10px; border-top: 1.5px dashed var(--line); padding-top: 18px; }
+.tally { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.tally h2 { font-size: .85rem; font-weight: 400; color: var(--muted); letter-spacing: .06em; margin: 0; }
+.score { font-variant-numeric: tabular-nums; display: flex; gap: 14px; }
+.score span { font-family: var(--display); }
+.score .d { color: var(--do); }
+.score .n { color: var(--dont); }
+.bar { height: 8px; border-radius: 999px; background: var(--dont); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--do); width: 50%; transition: width .4s; }
+ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+li { display: flex; justify-content: space-between; gap: 12px; font-size: .95rem; min-width: 0; }
+li .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+li .r { font-family: var(--display); flex-shrink: 0; }
+li .r.do { color: var(--do); }
+li .r.dont { color: var(--dont); }
+.empty { color: var(--muted); font-size: .9rem; margin: 0; }
+.clear { align-self: flex-end; font: inherit; font-size: .85rem; color: var(--muted); background: none; border: 0; cursor: pointer; text-decoration: underline; padding: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .head, .sweat { animation: none !important; }
+  .stamp.slam { animation: none; }
+  .stage { transition: none; }
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="q">할까?</span> <span class="q2">말까?</span></h1>
+    <p class="sub">고민될 땐 그림을 눌러요. 반반 확률로 대신 정해 줄게요.</p>
+  </header>
+
+  <div class="topic">
+    <label for="topic">무엇을 고민 중인가요? (선택)</label>
+    <input id="topic" type="text" maxlength="40" placeholder="예: 야식으로 치킨 시키기" autocomplete="off">
+  </div>
+
+  <button class="stage" id="stage" type="button" aria-label="눌러서 결정하기">
+    <svg viewBox="0 0 520 448" aria-hidden="true">
+      <!-- thought dots -->
+      <g class="bubble" id="b-do">
+        <rect x="22" y="34" width="180" height="96" rx="48"/>
+        <circle cx="160" cy="152" r="11"/>
+        <circle cx="184" cy="178" r="7"/>
+        <text x="112" y="97" text-anchor="middle">할까?</text>
+      </g>
+      <g class="bubble" id="b-dont">
+        <rect x="318" y="34" width="180" height="96" rx="48"/>
+        <circle cx="360" cy="152" r="11"/>
+        <circle cx="336" cy="178" r="7"/>
+        <text x="408" y="97" text-anchor="middle">말까?</text>
+      </g>
+      <!-- body -->
+      <path d="M150 448 C150 370 200 342 260 342 C320 342 370 370 370 448 Z" fill="var(--muted)" opacity=".55"/>
+      <g class="head">
+        <circle cx="260" cy="262" r="84" fill="var(--skin)" stroke="var(--ink)" stroke-width="4"/>
+        <!-- hair tuft -->
+        <path d="M232 182 q10 -26 28 -4 q12 -22 26 2" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+        <!-- brows: worried -->
+        <path d="M212 232 l26 8" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+        <path d="M308 232 l-26 8" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+        <!-- eyes looking up -->
+        <circle cx="228" cy="258" r="9" fill="var(--ink)"/>
+        <circle cx="292" cy="258" r="9" fill="var(--ink)"/>
+        <circle cx="231" cy="254" r="3" fill="var(--paper)"/>
+        <circle cx="295" cy="254" r="3" fill="var(--paper)"/>
+        <!-- wavy mouth -->
+        <path d="M236 302 q8 -8 16 0 q8 8 16 0 q8 -8 16 0" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+        <!-- sweat -->
+        <path class="sweat" d="M334 222 q10 16 0 22 q-10 -6 0 -22 Z" fill="#7cc3f0" stroke="var(--ink)" stroke-width="2"/>
+      </g>
+      <!-- hand on chin -->
+      <ellipse cx="298" cy="350" rx="26" ry="20" fill="var(--skin)" stroke="var(--ink)" stroke-width="4"/>
+    </svg>
+    <span class="hint" id="hint">눌러서 결정하기</span>
+    <span class="stamp" id="stamp" hidden></span>
+  </button>
+
+  <div class="verdict" id="verdict" aria-live="polite">
+    <p class="small">결과는 매번 50 : 50 이에요. 이전 결과와 상관없어요.</p>
+  </div>
+
+  <button class="again" id="again" type="button" hidden>다시 고민하기</button>
+
+  <section class="log" aria-label="결정 기록">
+    <div class="tally">
+      <h2>지금까지의 결정</h2>
+      <div class="score">한다 <span class="d" id="cd">0</span> · 안 한다 <span class="n" id="cn">0</span></div>
+    </div>
+    <div class="bar"><i id="bar"></i></div>
+    <ol id="list"></ol>
+    <p class="empty" id="empty">아직 기록이 없어요. 첫 고민을 맡겨 보세요.</p>
+    <button class="clear" id="clear" type="button" hidden>기록 지우기</button>
+  </section>
+</div>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var bDo = document.getElementById('b-do');
+  var bDont = document.getElementById('b-dont');
+  var stamp = document.getElementById('stamp');
+  var hint = document.getElementById('hint');
+  var verdict = document.getElementById('verdict');
+  var again = document.getElementById('again');
+  var topic = document.getElementById('topic');
+  var listEl = document.getElementById('list');
+  var emptyEl = document.getElementById('empty');
+  var clearBtn = document.getElementById('clear');
+  var KEY = 'halkka-malkka-log';
+  var busy = false, decided = false;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var log = [];
+  try { log = JSON.parse(localStorage.getItem(KEY) || '[]') || []; } catch (e) { log = []; }
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(log.slice(0, 50))); } catch (e) {} }
+
+  // fair coin: one random bit from the crypto source
+  function flip() {
+    try { var a = new Uint32Array(1); crypto.getRandomValues(a); return (a[0] & 1) === 1; }
+    catch (e) { return Math.random() < 0.5; }
+  }
+
+  function esc(s) { return s.replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function render() {
+    var d = 0, n = 0;
+    log.forEach(function (x) { x.doIt ? d++ : n++; });
+    document.getElementById('cd').textContent = d;
+    document.getElementById('cn').textContent = n;
+    document.getElementById('bar').style.width = (d + n ? (d / (d + n)) * 100 : 50) + '%';
+    listEl.innerHTML = log.slice(0, 8).map(function (x) {
+      return '<li><span class="t">' + esc(x.topic || '이름 없는 고민') + '</span><span class="r ' + (x.doIt ? 'do">한다' : 'dont">안 한다') + '</span></li>';
+    }).join('');
+    emptyEl.hidden = log.length > 0;
+    clearBtn.hidden = log.length === 0;
+  }
+
+  function setOn(which) {
+    bDo.classList.toggle('on', which === 0);
+    bDont.classList.toggle('on', which === 1);
+  }
+
+  function decide() {
+    if (busy) return;
+    if (decided) { reset(); return; }
+    busy = true;
+    stage.classList.add('busy');
+    stage.setAttribute('aria-disabled', 'true');
+    hint.textContent = '고민 중…';
+    verdict.innerHTML = '<p class="small">음… 할까… 말까…</p>';
+
+    var doIt = flip();
+    var final = doIt ? 0 : 1;
+    // roulette between the two bubbles, slowing down, landing on the result
+    var steps = reduce ? 0 : 13 + (final === 1 ? 1 : 0);
+    var i = 0, cur = 1, delay = 60;
+    function tick() {
+      if (i >= steps) { setOn(final); land(doIt); return; }
+      cur = 1 - cur; setOn(cur); i++;
+      delay *= 1.17;
+      setTimeout(tick, delay);
+    }
+    tick();
+  }
+
+  function land(doIt) {
+    var t = topic.value.trim();
+    (doIt ? bDont : bDo).classList.add('dim');
+    stamp.textContent = doIt ? '한다!' : '안 한다';
+    stamp.className = 'stamp ' + (doIt ? 'do' : 'dont') + ' slam';
+    stamp.hidden = false;
+    hint.hidden = true;
+    stage.classList.remove('busy');
+    stage.classList.add('done');
+    stage.removeAttribute('aria-disabled');
+    stage.setAttribute('aria-label', '결과: ' + (doIt ? '한다' : '안 한다') + '. 눌러서 다시 고민하기');
+    var what = t ? '「' + esc(t) + '」, ' : '';
+    verdict.innerHTML = doIt
+      ? '<p class="line">' + what + '<b style="color:var(--do)">하세요.</b> 고민은 여기까지!</p><p class="small">결정은 내려졌어요. 이제 움직일 차례예요.</p>'
+      : '<p class="line">' + what + '<b style="color:var(--dont)">하지 마세요.</b> 오늘은 패스!</p><p class="small">안 해도 괜찮아요. 마음 편히 넘어가요.</p>';
+    log.unshift({ topic: t, doIt: doIt, at: Date.now() });
+    save(); render();
+    again.hidden = false;
+    busy = false; decided = true;
+  }
+
+  function reset() {
+    decided = false;
+    stamp.hidden = true;
+    stamp.className = 'stamp';
+    bDo.classList.remove('on', 'dim');
+    bDont.classList.remove('on', 'dim');
+    stage.classList.remove('done');
+    stage.setAttribute('aria-label', '눌러서 결정하기');
+    hint.hidden = false;
+    hint.textContent = '눌러서 결정하기';
+    again.hidden = true;
+    verdict.innerHTML = '<p class="small">결과는 매번 50 : 50 이에요. 이전 결과와 상관없어요.</p>';
+  }
+
+  stage.addEventListener('click', decide);
+  again.addEventListener('click', function () { reset(); topic.focus(); });
+  topic.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); if (decided) reset(); decide(); } });
+  clearBtn.addEventListener('click', function () { log = []; save(); render(); });
+  render();
+})();
+</script>
+
+</body>
+</html>
